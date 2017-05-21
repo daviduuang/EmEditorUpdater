@@ -8,6 +8,8 @@
 
 2. 在EmEditor的外部工具设置里新增一个 Update 和 Updateconfig 的工具，设置如下：
 
-![外部工具栏](http://www.baidu.com/img/bdlogo.gif "外部工具栏")
-![update](http://www.baidu.com/img/bdlogo.gif "Update")
-![updateconfig](http://www.baidu.com/img/bdlogo.gif "Updateconfig")
+![外部工具栏](https://raw.githubusercontent.com/DavidWang88/EmEditorUpdater/master/ScreenCapture/extoolbar.png "外部工具栏")
+![update](https://raw.githubusercontent.com/DavidWang88/EmEditorUpdater/master/ScreenCapture/update.png "Update")
+![updateconfig](https://raw.githubusercontent.com/DavidWang88/EmEditorUpdater/master/ScreenCapture/updateconfig.png "Updateconfig")
+
+3. 点击工具栏上的 Updateconfig 即可打开更新配置对话框，点击工具栏上的 Update 即可执行静默更新。
