@@ -1,11 +1,16 @@
 ﻿;
 ; EmEditor Updater
-;   V2.0
+;   V2.1
 ;   by David Wang
-;   2017-05-06 15:03
+;   2017-05-21 23:16
 ;
-
-;parse EmEditor(portable) download links from: http://updates.emeditor.com/emed32_updates2.txt
+;
+;parse EmEditor(portable) download links from: 
+;   http://updates.emeditor.com/emed32_updates2.txt
+;   http://updates.emeditor.com/emed32_updates2_beta.txt
+;   http://updates.emeditor.com/emed64_updates2.txt
+;   http://updates.emeditor.com/emed64_updates2_beta.txt
+;
 ;download portable files
 ;decompress portable files
 ;extract portable files
@@ -17,6 +22,7 @@
 ; #include json.ahk
 #include NumifyVersion.ahk
 #include SmartZip.ahk
+#include GetBinaryType.ahk
 
 
 #SingleInstance On
@@ -26,16 +32,38 @@ SetWorkingDir, %A_ScriptDir%
 menu, tray, deleteall
 
 /*
+* 获取应用的配置设置
+*/
+_GetConfig:
+	SplitPath, A_ScriptFullPath, , , , app_name,
+	app_ini := A_ScriptDir . "\" . app_name . ".ini"
+	IniRead, cfg_channel, %app_ini%, config, channel, stable
+	if (cfg_channel = "")
+		cfg_channel := "stable"
+	StringLower, %cfg_channel%, %cfg_channel%
+	if (cfg_channel = "stable")
+		update_channel := "_updates2.txt"
+	else
+		update_channel := "_updates2_beta.txt"
+
+/*
 * 获取EmEditor主程序所在的目录
 */
 _GetEmDir:
 	If 0 > 0
 	{
-		dir = %1%
-		ifexist , %dir%\EmEditor.exe ;file exist
+		par1 = %1%
+		ifexist , %par1%\EmEditor.exe ;file exist
 		{
-			em_dir := dir
+			em_dir := %par1%
 			goto, _CheckLocalVersion
+		}
+		else
+		{
+			if (par1 = "/config")
+			{
+				goto _UI_Config
+			}
 		}
 	}
 	IfExist, %A_ScriptDir%\EmEditor.exe
@@ -81,26 +109,37 @@ _CheckLocalVersion:
 		MsgBox, Check local EmEditor version error!
 		ExitApp
 	}
-
+	; check emEditor binary type
+	BinType := GetBinaryType( em_dir . "\EmEditor.exe")
+	If (BinType = "32BIT") 
+	{
+		emed_type := 32
+	}
+	else
+	{
+		emed_type := 64
+	}
+	
 /*
-* request latest version information from: http://updates.emeditor.com/emed32_updates2.txt
+* request latest version information from url: e.g. http://updates.emeditor.com/emed32_updates2.txt
 */
 _CheckOnlineVersion:
-	IfExist, %A_Temp%\emed32_updates2.txt
-		FileDelete, %A_Temp%\emed32_updates2.txt
-	check_url := "http://updates.emeditor.com/emed32_updates2.txt"
+	IfExist, %A_Temp%\emed%emed_type%%update_channel%
+		FileDelete, %A_Temp%\emed%emed_type%%update_channel%
+	check_url = http://updates.emeditor.com/emed%emed_type%%update_channel%
 	try
 	{
 		ToolTip Retrieving latest version information...
-		URLDownloadToFile, %check_url%, %A_Temp%\emed32_updates2.txt
+		URLDownloadToFile, %check_url%, %A_Temp%\emed%emed_type%%update_channel%
 		Tooltip
 	}catch e
 	{
-		MsgBox, 16, EmEditor Updater , % "There was an error during the update!`n"  e.message "`nwhat: " e.what "`nextra: " e.extra
+		MsgBox, 16, EmEditor Updater , % "There was an error during " A_ThisLabel "!`n"  e.message "`nwhat: " e.what "`nextra: " e.extra
 		Tooltip
 		return
 	}
-	IniRead, online_ver, %A_Temp%\emed32_updates2.txt, update32_14, Version
+	; [update32_14] for 32 bit; [update64_14] for 64 bit.
+	IniRead, online_ver, %A_Temp%\emed%emed_type%_updates2.txt, update%emed_type%_14, Version
 	;e.g 14.5.2.0
 	if online_ver=
 	{
@@ -125,7 +164,7 @@ _CompareVersion:
 	{
 		MsgBox, 36, EmEditor Updater,
 		(LTrim
-		There is a new EmEditor version.
+		A new version is available.
 		
 		Current version:`t%local_ver%
 		Latest version:`t%online_ver%
@@ -142,10 +181,12 @@ _CompareVersion:
 */
 _Download:
 	; e.g http://files.emeditor.com/emed32_16.7.2.exe   --->   http://files.emeditor.com/emed32_16.7.2_portable.zip
-	IniRead, url_install, %A_Temp%\emed32_updates2.txt, update32_14, URL
+	IniRead, url_install, %A_Temp%\emed%emed_type%%update_channel%, update%emed_type%_14, URL
 	down_url :=RegExReplace(url_install,"\.exe","_portable.zip")
 	; down_url   ->   local_url
-	StringSplit, URLArray, down_url, "/"
+	;---for compile
+	StringSplit, URLArray, down_url, /
+	;---for scite
 	; URLArray := StrSplit(down_url, "/")
 	local_url:=URLArray[URLArray.MaxIndex()]
 	IF FileExist(A_Temp "\" local_url)
@@ -172,7 +213,7 @@ _Download:
 		Tooltip
 	}catch e
 	{
-		MsgBox, 16, EmEditor Updater , % "There was an error during the update!`n" e.message "`nwhat: " e.what "`nextra: " e.extra
+		MsgBox, 16, EmEditor Updater , % "There was an error during " A_ThisLabel "!`n" e.message "`nwhat: " e.what "`nextra: " e.extra
 		Tooltip
 		return
 	}	
@@ -208,13 +249,13 @@ _RemoveUseless:
 */
 ; e.g http://files.emeditor.com/help/emed_help_zh-cn_16.7.1.msi
 _CheckHelp:
-	IniRead, help_url, %A_Temp%\emed32_updates2.txt, help_zh-cn, URL
-	StringSplit, URLArray, down_url, "/"
-	; URLArray := StrSplit(help_url, "/")
+	IniRead, help_url, %A_Temp%\emed%emed_type%%update_channel%, help_zh-cn, URL
+	;StringSplit, URLArray, down_url, "/"
+	URLArray := StrSplit(help_url, "/")
 	help_name:=URLArray[URLArray.MaxIndex()]
 	IF FileExist(A_Temp "\" help_name)
 	{
-		IniRead, online_help_size, %A_Temp%\emed32_updates2.txt, help_zh-cn, Size
+		IniRead, online_help_size, %A_Temp%\emed%emed_type%%update_channel%, help_zh-cn, Size
 		FileGetSize, local_help_size, %A_Temp%\%help_name%
 		if (online_help_size != local_help_size)
 		{
@@ -238,7 +279,7 @@ _DownloadHelp:
 		goto, _ExtractHelp
 	}catch e
 	{
-		MsgBox, 16, EmEditor Updater , % "There was an error during the update!`n" e.message "`nwhat: " e.what "`nextra: " e.extra
+		MsgBox, 16, EmEditor Updater , % "There was an error during " A_ThisLabel "!`n" e.message "`nwhat: " e.what "`nextra: " e.extra
 		Tooltip
 		return
 	}
@@ -345,3 +386,42 @@ else
 FileRecycle, %em_dir%\EmEditor_BAK.zip
 ExitApp
 
+
+;----------------------------------------------------------------------------
+/*
+* show ui for config
+*/
+_UI_Config:
+if (cfg_channel = "stable")
+{
+	chk_s := 1
+	chk_a := 0
+}
+else
+{
+	chk_s := 0
+	chk_a := 1
+}
+Gui, Add, Radio, x21 y37 w192 h19 Checked%chk_s% vchn_grp, 仅正式版
+Gui, Add, Radio, x21 y66 w192 h19 Checked%chk_a%, 正式版以及 beta 版
+Gui, Add, GroupBox, x12 y18 w220 h86 , 选择更新频道
+Gui, Add, Button, x156 y114 w67 h28 gbtnCancel, 取消
+Gui, Add, Button, x69 y114 w67 h28 gbtnOK, 确定
+; Generated using SmartGUI Creator for SciTE
+Gui, Show, w248 h156, EmEditor Updater
+gui +LastFound +AlwaysOnTop -MinimizeBox
+return
+
+btnOK:
+Gui, Submit , NoHide
+if (chn_grp = 1)
+	cfg_channel := "stable"
+if (chn_grp = 2)
+	cfg_channel := "all"
+IniWrite, %cfg_channel%, %app_ini%, config, channel
+ExitApp
+
+btnCancel:
+GuiClose:
+ExitApp
+;----------------------------------------------------------------------------
