@@ -8,3 +8,4 @@
 
 2. 在EmEditor的外部工具设置里新增一个 Update 和 Updatconfig 的工具，设置如下：
 
+![外部工具栏](http://www.baidu.com/img/bdlogo.gif "百度logo")
