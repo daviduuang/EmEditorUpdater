@@ -6,6 +6,8 @@
 
 1. 将Release目录下的文件拷贝到EmEditor目录下的 ExTool\EmEditorUpdater 目录下（如果没有的话，就手工新建一个）。
 
-2. 在EmEditor的外部工具设置里新增一个 Update 和 Updatconfig 的工具，设置如下：
+2. 在EmEditor的外部工具设置里新增一个 Update 和 Updateconfig 的工具，设置如下：
 
-![外部工具栏](http://www.baidu.com/img/bdlogo.gif "百度logo")
+![外部工具栏](http://www.baidu.com/img/bdlogo.gif "外部工具栏")
+![update](http://www.baidu.com/img/bdlogo.gif "Update")
+![updateconfig](http://www.baidu.com/img/bdlogo.gif "Updateconfig")
