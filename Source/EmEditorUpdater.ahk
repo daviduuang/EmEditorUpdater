@@ -1,8 +1,8 @@
 ﻿;
 ; EmEditor Updater
-;   V2.1
+;   V2.2
 ;   by David Wang
-;   2017-05-21 23:16
+;   2017-05-23 18:40
 ;
 ;
 ;parse EmEditor(portable) download links from: 
@@ -139,7 +139,7 @@ _CheckOnlineVersion:
 		return
 	}
 	; [update32_14] for 32 bit; [update64_14] for 64 bit.
-	IniRead, online_ver, %A_Temp%\emed%emed_type%_updates2.txt, update%emed_type%_14, Version
+	IniRead, online_ver, %A_Temp%\emed%emed_type%%update_channel%, update%emed_type%_14, Version
 	;e.g 14.5.2.0
 	if online_ver=
 	{
@@ -185,10 +185,11 @@ _Download:
 	down_url :=RegExReplace(url_install,"\.exe","_portable.zip")
 	; down_url   ->   local_url
 	;---for compile
-	StringSplit, URLArray, down_url, /
+	;StringSplit, URLArray, down_url, /
 	;---for scite
-	; URLArray := StrSplit(down_url, "/")
+	 URLArray := StrSplit(down_url, "/")
 	local_url:=URLArray[URLArray.MaxIndex()]
+	;msgbox %local_url%
 	IF FileExist(A_Temp "\" local_url)
 	{
 		FileGetSize, local_file_size, %A_Temp%\%local_url%
@@ -351,17 +352,18 @@ _PatchIt:
 				else
 				{
 					TrayTip, EmEditor Patch, Patch Successfully!, 3, 1
+					WinActivate
+					ControlClick, Button1  ;Click the OK button
+					WinWaitClose
+					
+					WinClose, EmEditor 15.x [x86|x64] patch
 				}
 			}
 			else
 			{
 				TrayTip, EmEditor Patch, Patch Failed!, 3, 3
 			}
-			WinActivate
-			ControlClick, Button1  ;Click the OK button
-			WinWaitClose
-			
-			WinClose, EmEditor 15.x [x86|x64] patch
+
 			WinWaitClose, EmEditor 15.x [x86|x64] patch
 		}
 	}
